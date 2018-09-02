@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour {
 
-	
 	private void Move(Vector3 direction) {
 		transform.position += direction;
 
