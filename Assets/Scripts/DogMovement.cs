@@ -40,6 +40,7 @@ public class DogMovement : MonoBehaviour {
 			// Debug.Log(Vector2.Distance(m_enemyReference.transform.position, transform.position));
 			// Debug.Log(expandedMaskSize);
 			Debug.Log("Saw Enemy!");
+			m_enemyReference.GetComponent<SecondEnemyMovement>().GetAwayFromDog();
 		}
 		StartCoroutine(BarkRoutine());
 	}
