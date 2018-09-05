@@ -8,6 +8,7 @@ TagManager:
   - Bark
   - Enemy
   - Ground
+  - LockCollider
   layers:
   - Default
   - TransparentFX

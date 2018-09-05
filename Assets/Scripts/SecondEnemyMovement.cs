@@ -72,8 +72,19 @@ public class SecondEnemyMovement : MonoBehaviour {
 
 			// if it's not a wall then add the sucessors
 			Collider2D collision = Physics2D.OverlapCircle(selectedNode.position, .1f);
+			Collider2D[] collisions = Physics2D.OverlapCircleAll(transform.position, .1f);
 
-			if(collision.tag == "Ground") {
+			bool hasWall = false;
+			bool hasGround = false;
+			foreach(Collider2D t_collision in collisions) {
+				if(t_collision.tag == "Walls") {
+					hasWall = true;
+				} else if(t_collision.tag == "Ground") {
+					hasGround = true;
+				}
+			}
+
+			if(hasGround && !hasWall) {
 				stepedList.Add(selectedNode);
 
 				foreach(Vector3 movement in possibleMovements) {
@@ -149,13 +160,17 @@ public class SecondEnemyMovement : MonoBehaviour {
 
 	private void Move(Vector3 direction) {
 		transform.position += direction;
+		Collider2D[] collisions = Physics2D.OverlapCircleAll(transform.position, .1f);
 
-		Collider2D collision = Physics2D.OverlapCircle(transform.position, .1f);
-		
-		if(collision != null) {
-			if(collision.tag != "Ground") {
-				transform.position -= direction;
+		bool hasWall = false;
+		foreach(Collider2D t_collision in collisions) {
+			if(t_collision.tag == "Walls") {
+				hasWall =true;
 			}
+		}
+
+		if(hasWall) {
+			transform.position -= direction;
 		}
 	}
 	

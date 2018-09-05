@@ -17,12 +17,17 @@ public class DogMovement : MonoBehaviour {
 	
 	private void Move(Vector3 direction) {
 		transform.position += direction;
-		Collider2D collision = Physics2D.OverlapCircle(transform.position, .1f);
+		Collider2D[] collisions = Physics2D.OverlapCircleAll(transform.position, .1f);
 
-		if(collision != null) {
-			if(collision.tag != "Ground") {
-				transform.position -= direction;
+		bool hasWall = false;
+		foreach(Collider2D t_collision in collisions) {
+			if(t_collision.tag == "Walls") {
+				hasWall =true;
 			}
+		}
+
+		if(hasWall) {
+			transform.position -= direction;
 		}
 		
 	}
@@ -45,6 +50,29 @@ public class DogMovement : MonoBehaviour {
 		StartCoroutine(BarkRoutine());
 	}
 
+	bool CheckForLockCollider() {
+		Collider2D[] collisions = Physics2D.OverlapCircleAll(transform.position, .1f);
+
+		foreach(Collider2D collision in collisions) {
+			if(collision.tag == "LockCollider") {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void PressLock() {
+		Collider2D[] collisions = Physics2D.OverlapCircleAll(transform.position, .1f);
+
+		foreach(Collider2D collision in collisions) {
+			Debug.Log(collision.tag);
+			if(collision.tag == "LockCollider") {
+				collision.gameObject.GetComponent<Lock>().PressLock();
+			}
+		}
+	}
+
 	void Update () {
 		if(Input.GetKeyDown(KeyCode.UpArrow)) {
 			Move(Vector3.up);
@@ -57,5 +85,10 @@ public class DogMovement : MonoBehaviour {
 		} else if(Input.GetKeyDown(KeyCode.Space)) {
 			Bark();
 		}
+
+		if(Input.GetKeyDown(KeyCode.E)) {
+			PressLock();
+		}
+
 	}
 }
