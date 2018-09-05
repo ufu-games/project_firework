@@ -20,7 +20,7 @@ public class DogMovement : MonoBehaviour {
 		Collider2D collision = Physics2D.OverlapCircle(transform.position, .1f);
 
 		if(collision != null) {
-			if(collision.tag == "Walls") {
+			if(collision.tag != "Ground") {
 				transform.position -= direction;
 			}
 		}
@@ -29,14 +29,14 @@ public class DogMovement : MonoBehaviour {
 
 	private IEnumerator BarkRoutine() {
 		maskObject.localScale = new Vector3(expandedMaskSize, expandedMaskSize, expandedMaskSize);
-		yield return new WaitForSeconds(0.1f);
+		yield return new WaitForSeconds(0.25f);
 		maskObject.localScale = new Vector3(initialMaskSize, initialMaskSize, initialMaskSize);
 	}
 	
 	void Bark() {
 		m_audioSource.Play();
 
-		if(Vector2.Distance(m_enemyReference.transform.position, transform.position) < ((expandedMaskSize / 2) + 1)) {
+		if(Vector2.Distance(m_enemyReference.transform.position, transform.position) < ((expandedMaskSize / 2) + 2)) {
 			// Debug.Log(Vector2.Distance(m_enemyReference.transform.position, transform.position));
 			// Debug.Log(expandedMaskSize);
 			Debug.Log("Saw Enemy!");

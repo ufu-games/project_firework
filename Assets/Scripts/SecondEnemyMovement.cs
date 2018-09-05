@@ -13,7 +13,7 @@ public class SecondEnemyMovement : MonoBehaviour {
 		m_dogReference = GameObject.FindGameObjectWithTag("Player");
 	}
 
-	private float CalculateManhattanDistance(Vector2 a, Vector2 b) {
+	private float CalculateManhattanDistance(Vector3 a, Vector3 b) {
 		float mDistance = 0;
 		mDistance += Mathf.Abs(b.x - a.x);
 		mDistance += Mathf.Abs(b.y - a.y);
@@ -21,73 +21,95 @@ public class SecondEnemyMovement : MonoBehaviour {
 		return mDistance;
 	}
 
-	private IEnumerator MoveWithListRoutine(List<Vector2> movements) {
-		foreach(Vector2 move in movements) {
+	private IEnumerator MoveWithListRoutine(List<Vector3> movements) {
+		foreach(Vector3 move in movements) {
 			Move(move);
 			yield return null;
 		}
 	}
 
 	private class aStarNode {
-		public Vector2 position;
+		public Vector3 position;
 		public float f;
 		public aStarNode parent;
-		public Vector2 movementFromParent;
+		public Vector3 movementFromParent;
+		public int step;
 
 
-		public aStarNode(Vector2 position, float f, aStarNode parent, Vector2 movementFromParent) {
+		public aStarNode(Vector3 position, float f, aStarNode parent, Vector3 movementFromParent, int step) {
 			this.position = position;
 			this.f = f;
 			this.parent = parent;
 			this.movementFromParent = movementFromParent;
+			this.step = step;
 		}
 	}
 
-	private void MakeListOfMovements(Vector2 startingPosition) {
+	private void MakeListOfMovements(Vector3 startingPosition) {
 		List<aStarNode> openList = new List<aStarNode>();
-		List<aStarNode> closedList = new List<aStarNode>();
-		openList.Add(new aStarNode(startingPosition, 0f, null, Vector2.zero));
+		List<Vector2> exploredPositions = new List<Vector2>();
+		List<aStarNode> stepedList = new List<aStarNode>();
+		openList.Add(new aStarNode(startingPosition, 0f, null, Vector3.zero, 0));
+
 		aStarNode theChosenOne = null;
-		int step = 0;
+		int algorithmSteps = 0;
 
 		while(openList.Count > 0) {
 			// get the node with BIGEST F on the list
-			int selectedIndex = Random.Range(0, openList.Count);
-			aStarNode selectedNode = openList[selectedIndex];
-			openList.RemoveAt(selectedIndex);
-			closedList.Add(selectedNode);
+			int selectedIndex = 0;
+			
 
-			// if it's not a wall then add the sucessors
-			Collider2D collision = Physics2D.OverlapCircle(transform.position, .1f);
-			Debug.Log(collision);
-
-			if(collision == null) {
-				foreach(Vector2 movement in possibleMovements) {
-					openList.Add(new aStarNode(selectedNode.position + movement,
-					CalculateManhattanDistance(m_dogReference.transform.position, selectedNode.position + movement), selectedNode, movement));
+			for(int i = 0; i < openList.Count; i++) {
+				if(openList[i].f > openList[selectedIndex].f) {
+					selectedIndex = i;
 				}
 			}
 
-			step++;
-			if(step >= 50) {
+			aStarNode selectedNode = openList[selectedIndex];
+			openList.RemoveAt(selectedIndex);
+			exploredPositions.Add(selectedNode.position);
+			// Debug.Log(selectedNode.position);
+
+			// if it's not a wall then add the sucessors
+			Collider2D collision = Physics2D.OverlapCircle(selectedNode.position, .1f);
+
+			if(collision.tag == "Ground") {
+				stepedList.Add(selectedNode);
+
+				foreach(Vector3 movement in possibleMovements) {
+					if(Physics2D.OverlapCircle(selectedNode.position + movement, .1f) != null) {
+						if(Physics2D.OverlapCircle(selectedNode.position + movement, .1f).tag == "Ground") {
+							if(!exploredPositions.Contains((selectedNode.position+movement))) {
+							// Debug.Log("Pushing to the list: " + (selectedNode.position + movement));
+							openList.Add(new aStarNode(selectedNode.position + movement,
+							CalculateManhattanDistance(m_dogReference.transform.position, selectedNode.position + movement), selectedNode, movement, selectedNode.step+1));
+							}
+						}
+					}
+				}
+			}
+
+			algorithmSteps++;
+			if(algorithmSteps > 50) {
 				break;
 			}
 		}
 
 		// CREATING THE MOVEMENT LIST
-		List<Vector2> movements = new List<Vector2>();
+		List<Vector3> movements = new List<Vector3>();
 		bool canDo = true;
 
-		theChosenOne = closedList[0];
-		for(int i = 1; i < closedList.Count; i++) {
-			if(closedList[i].f > theChosenOne.f) {
-				theChosenOne = closedList[i];
+		theChosenOne = stepedList[0];
+		for(int i = 1; i < stepedList.Count; i++) {
+			if(stepedList[i].f > theChosenOne.f) {
+				theChosenOne = stepedList[i];
 			}
 		}
 		
 		aStarNode node = theChosenOne;
 
 		while(canDo) {
+			Vector3 movement = GetOpposite(node.movementFromParent);
 			movements.Insert(0, node.movementFromParent);
 			
 			if(node.parent != null) {
@@ -98,7 +120,25 @@ public class SecondEnemyMovement : MonoBehaviour {
 			}
 		}
 
+		// // Debug.Log("movements to take");
+		// for(int i = 0; i < movements.Count; i++) {
+		// 	// Debug.Log(movements[i]);
+		// }
 		StartCoroutine(MoveWithListRoutine(movements));
+	}
+
+	private Vector3 GetOpposite(Vector3 move) {
+		if(move == Vector3.up) {
+			return Vector3.down;
+		} else if(move == Vector3.right) {
+			return Vector3.left;
+		} else if(move == Vector3.down) {
+			return Vector3.up;
+		} else if(move == Vector3.left) {
+			return Vector3.right;
+		}
+
+		return Vector3.zero;
 	}
 
 	public void GetAwayFromDog() {
@@ -113,7 +153,7 @@ public class SecondEnemyMovement : MonoBehaviour {
 		Collider2D collision = Physics2D.OverlapCircle(transform.position, .1f);
 		
 		if(collision != null) {
-			if(collision.tag == "Walls") {
+			if(collision.tag != "Ground") {
 				transform.position -= direction;
 			}
 		}
